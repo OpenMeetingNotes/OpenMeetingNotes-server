@@ -3,6 +3,7 @@ package main
 import (
 	"net/http"
 
+	"github.com/OpenMeetingNotes/OpenMeetingNotes-server/handler"
 	"github.com/labstack/echo/v4"
 )
 
