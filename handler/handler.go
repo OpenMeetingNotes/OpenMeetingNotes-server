@@ -24,12 +24,14 @@ type Messages struct {
 	Content string `json:"content"`
 }
 
+func Config() string {
+	secret := os.Getenv("OPENAI_SECRET")
+	return secret
+}
+
 func New(c echo.Context) error {
 
 	// Inputs: filepath(of .mp3) (hardcode for now), length of summary, model type(default ChatGPT)
-
-	// Call apis
-	// Set up secrets locally?
 
 	// Whisper API
 	url := "https://api.openai.com/v1/audio/transcriptions"
@@ -38,16 +40,28 @@ func New(c echo.Context) error {
 	w_payload := &bytes.Buffer{}
 	writer := multipart.NewWriter(w_payload)
 
-	file, errFile1 := os.Open("/path/to/file")
+	file, errFile1 := os.Open("./data/test.mp3")
+
+	if errFile1 != nil {
+		fmt.Println(errFile1)
+		defer file.Close()
+		return c.String(http.StatusTeapot, "Test Error")
+	}
+
 	defer file.Close()
 
 	part1, errFile1 := writer.CreateFormFile("file", filepath.Base("/path/to/file"))
-	_, errFile1 = io.Copy(part1, file)
-
 	if errFile1 != nil {
 		fmt.Println(errFile1)
 		return c.String(http.StatusTeapot, "Test Error")
 	}
+
+	_, errFile1 = io.Copy(part1, file)
+	if errFile1 != nil {
+		fmt.Println(errFile1)
+		return c.String(http.StatusTeapot, "Test Error")
+	}
+
 	_ = writer.WriteField("model", "whisper-1")
 	err := writer.Close()
 	if err != nil {
@@ -63,7 +77,6 @@ func New(c echo.Context) error {
 		return c.String(http.StatusTeapot, "Test Error")
 	}
 
-	// TODO: Get api key and put it in a secret --> secret.env
 	openapi_key := ""
 	bearer_token := fmt.Sprintf("Bearer %s", openapi_key)
 
