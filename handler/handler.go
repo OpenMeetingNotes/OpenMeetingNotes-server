@@ -2,48 +2,42 @@ package handler
 
 import (
 	"fmt"
-	"io"
 	"net/http"
-	"os"
 
+	"github.com/OpenMeetingNotes/OpenMeetingNotes-server/model"
+	"github.com/OpenMeetingNotes/OpenMeetingNotes-server/service"
 	"github.com/labstack/echo/v4"
 )
 
-func Upload(c echo.Context) error {
-	name := c.FormValue("name")
-	email := c.FormValue("email")
-
-	fmt.Println(name, email)
-
-	// Source
-	file, err := c.FormFile("file")
-	if err != nil {
-		return err
-	}
-
-	src, err := file.Open()
-	if err != nil {
-		return err
-	}
-	defer src.Close()
-
-	// Destination
-	dst, err := os.Create("data/" + file.Filename)
-	if err != nil {
-		return err
-	}
-
-	defer dst.Close()
-
-	// Copy
-	if _, err = io.Copy(dst, src); err != nil {
-		return err
-	}
-
-	return c.HTML(http.StatusOK, fmt.Sprintf("File %s uploaded successfully", file.Filename))
+func Hello(c echo.Context) error {
+	return c.String(http.StatusOK, "Hello, World!")
 }
 
 func New(c echo.Context) error {
-	// TODO: Implement handler.New
-	return c.String(http.StatusOK, "Hello, World!")
+	formFile, err := service.NewMediaUpload().FileRcv(c)
+	if err != nil {
+		return c.JSON(
+			http.StatusInternalServerError,
+			model.Response{
+				Message: "Failed to receive file",
+			},
+		)
+	}
+
+	fileName, err := service.FileCopy(formFile)
+	if err != nil {
+		return c.JSON(
+			http.StatusInternalServerError,
+			model.Response{
+				Message: "Failed to create file",
+			},
+		)
+	}
+
+	return c.JSON(
+		http.StatusOK,
+		model.Response{
+			Message: fmt.Sprintf("File %s uploaded successfully", fileName),
+		},
+	)
 }
